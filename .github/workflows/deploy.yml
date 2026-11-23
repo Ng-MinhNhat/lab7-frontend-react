@@ -1,0 +1,51 @@
+name: Deploy React to GitHub Pages
+
+# Kích hoạt workflow (luồng công việc) mỗi khi push code lên nhánh main
+on:
+  push:
+    branches:
+      - main
+
+# Cấp quyền ghi để GitHub Actions xuất bản thẳng lên GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Cài đặt môi trường Node.js 20
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # Cài thư viện chuẩn theo package-lock.json và biên dịch ra thư mục dist/
+      - name: Install and Build
+        run: |
+          npm ci
+          npm run build
+
+      # Cấu hình và đóng gói thư mục dist/ thành Artifact (thành phẩm) cho Pages
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist'
+
+      # Xuất bản lên GitHub Pages
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
